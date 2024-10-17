@@ -16,7 +16,7 @@ class Element:
 		self.pin_red = pin_red
 		self.pin_yellow = None
 
-	def update_priority(self, count, priority=1):
+	def update_priority(self, count, priority):
 		pass
 
 	def reset_priority(self):
@@ -35,11 +35,12 @@ class Element:
 
 class Street(Element):
 
-	def __init__(self, e_id, *, pin_green, pin_yellow, pin_red, frame_xyxy):
+	def __init__(self, e_id, *, pin_green, pin_yellow, pin_red, frame_xyxy,
+				min_green_time=5, max_green_time=20, seconds_per_elm=1):
 		super().__init__(e_id, pin_green=pin_green, pin_red=pin_red)
-		self.min_green_time = 5
-		self.max_green_time = 20
-		self.seconds_per_elm = 1
+		self.min_green_time = min_green_time
+		self.max_green_time = max_green_time
+		self.seconds_per_elm = seconds_per_elm
 		self.count = 0
 		self.pin_yellow = pin_yellow
 		self.frame_xyxy = frame_xyxy
@@ -60,16 +61,17 @@ class Street(Element):
 
 class Cross(Element):
 
-	def __init__(self, e_id, *, pin_green, pin_red, pin_btn1, pin_btn2):
+	def __init__(self, e_id, *, pin_green, pin_red, pin_btn1, pin_btn2, green_time=5):
 		super().__init__(e_id, pin_green=pin_green, pin_red=pin_red)
 		self.btn_1:bool = False
 		self.btn_2:bool = False
 		self.pin_btn1 = pin_btn1
 		self.pin_btn2 = pin_btn2
+		self._green_time = green_time
 
 	@property
 	def green_time(self):
-		return 5
+		return self._green_time
 
 	def update_priority(self, btn_nbr, priority=2):
 		self.btn_1 |= (btn_nbr == 0)
@@ -80,14 +82,15 @@ class Cross(Element):
 
 class Action:
 
-	def __init__(self, a_id, elements, sem_i):
+	def __init__(self, a_id, elements, sem_i, base_priority=0):
 		self.id = a_id
 		self.elements = elements
 		self.sem_i = sem_i
+		self.base_priority = base_priority
 
 	@property
 	def priority(self):
-		return sum([e.priority for e in self.elements])
+		return sum([e.priority for e in self.elements]) + self.base_priority
 
 	@property
 	def green_time(self):
