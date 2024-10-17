@@ -50,7 +50,7 @@ def sem_routine(streets, cross, sem):
 				# Giallo old
 				if old:
 					old.update(SemState.YELLOW)
-				
+
 				# Aggiorna dati numeri di veicoli
 				update_streets(streets)
 
@@ -82,10 +82,10 @@ def sem_routine(streets, cross, sem):
 		print("Programma interrotto manualmente.")
 
 def main():
-	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27),
-			   Street(2, pin_green=5, pin_yellow=19, pin_red=6),
-			   Street(3, pin_green=16, pin_yellow=20, pin_red=26),
-			   Street(4, pin_green=39, pin_yellow=38, pin_red=40)]
+	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[1,2,3,4]),
+			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[1,2,3,4]),
+			   Street(3, pin_green=16, pin_yellow=20, pin_red=26, frame_xyxy=[1,2,3,4]),
+			   Street(4, pin_green=39, pin_yellow=38, pin_red=40, frame_xyxy=[1,2,3,4])]
 
 	cross = [Cross(5, pin_green=12, pin_red=18, pin_btn1=24, pin_btn2=25),
 			 Cross(6, pin_green=7, pin_red=8, pin_btn1=10, pin_btn2=9),

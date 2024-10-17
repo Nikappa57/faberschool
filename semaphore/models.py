@@ -35,17 +35,22 @@ class Element:
 
 class Street(Element):
 
-	def __init__(self, e_id, *, pin_green, pin_yellow, pin_red):
+	def __init__(self, e_id, *, pin_green, pin_yellow, pin_red, frame_xyxy):
 		super().__init__(e_id, pin_green=pin_green, pin_red=pin_red)
 		self.min_green_time = 5
 		self.max_green_time = 20
 		self.seconds_per_elm = 1
 		self.count = 0
 		self.pin_yellow = pin_yellow
+		self.frame_xyxy = frame_xyxy
 
 	def update_priority(self, count, priority=1):
 		self.count = count
 		self.priority += priority * count
+
+	def is_inside(self, bb):
+		x1, y1, x2, y2 = self.frame_xyxy
+		return x1 <= bb[0] and y1 <= bb[1] and x2 >= bb[2] and y2 >= bb[3]
 
 	@property
 	def green_time(self):
