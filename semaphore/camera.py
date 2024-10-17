@@ -1,25 +1,37 @@
 import cv2
-from picamera2 import Picamera2
 
 class Camera:
 	def __init__(self) -> None:
-		self.picam2 = Picamera2()
-		self.picam2.preview_configuration.main.size = (640,480)
-		self.picam2.preview_configuration.main.format = "RGB888"
-		self.picam2.preview_configuration.align()
-		self.picam2.configure("preview")
-	
+		self.cap = cv2.VideoCapture(0)
+		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+		self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
 	def start(self):
-		self.picam2.start()
+		if not self.cap.isOpened():
+			self.cap.open(0)
 
 	def get_frame(self):
-		return self.picam2.capture_array()
-	
+		ret, frame = self.cap.read()
+		if not ret:
+			raise RuntimeError("Failed to capture image")
+		return frame
+
 	def stop(self):
-		self.picam2.stop()
+		if self.cap.isOpened():
+			self.cap.release()
+		cv2.destroyAllWindows()
 
 	def show_frame(self, frame):
 		cv2.imshow("RGB", frame)
 		if cv2.waitKey(1) & 0xFF == ord("q"):
 			return False
 		return True
+
+if __name__ == "__main__":
+	cam = Camera()
+	cam.start()
+	while True:
+		frame = cam.get_frame()
+		if not cam.show_frame(frame):
+			break
+	cam.stop()
