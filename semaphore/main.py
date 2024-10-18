@@ -1,32 +1,48 @@
-import re
+import cv2
 import random
 from time import sleep
 from typing import List
 from threading import Thread
+
 from sem_interface import SemaphoreInterface
-
 from models import Street, Cross, Action, PriorityActionQueue, SemState
-
+from camera import Camera
+from cv import Cv
 
 to_quit = False
-
-# def update_cross(,crosses: List[Cross]):
-# 	while comm.available():
-# 		msg = comm.receive()
-# 		if re.match(r"(\d+)\,(\d+)", msg):
-# 			cross_id, btn_nbr = map(int, msg.split(","))
-# 			print(f"Cross {cross_id} pressed button {btn_nbr}")
-# 			crosses[cross_id].update_priority(btn_nbr)
-
-def update_streets(streets: List[Street]):
-	for street in streets:
-		street.update_priority(random.randint(0, 10))
 
 def btn_check_routine(sem_i: SemaphoreInterface):
 	global to_quit
 	while to_quit == False:
 		sem_i.check_btns()
 		sleep(0.5)
+
+"""
+Mode 1: Classic Semaphore
+"""
+
+def draw_elm_zone(frame, elm):
+	x1, y1, x2, y2 = elm.frame_xyxy
+	cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+	
+	return frame
+
+def update_streets(streets: List[Street], camera: Camera, cv: Cv):
+	frame = camera.get_frame()
+	results = cv.inference(frame, ids=[0])
+	frame = cv.draw(frame, results)
+
+	for street in streets:
+		filtered_result = [r for r in results if street.is_in_zone(r)]
+		street.update_priority(len(filtered_result))
+
+		# results = results - filtered_result
+
+		# draw street zone
+		frame = draw_elm_zone(frame, street)
+
+	camera.show_frame(frame)
+
 
 def sem_routine(streets, cross, sem):
 	global to_quit
@@ -38,9 +54,14 @@ def sem_routine(streets, cross, sem):
 		Action(2, [streets[3], cross[1]], sem_i=sem)
 	]
 
+	camera = Camera()
+	cv = Cv(cncc=True)
+
+	camera.start()
+
 	old = None
 	try:
-		while to_quit == False:
+		while not to_quit:
 			print("---CICLO---")
 			for a in actions:
 				queue.enqueue(a)
@@ -52,7 +73,7 @@ def sem_routine(streets, cross, sem):
 					old.update(SemState.YELLOW)
 
 				# Aggiorna dati numeri di veicoli
-				update_streets(streets)
+				update_streets(streets, camera, cv)
 
 				sleep(3)
 
@@ -78,8 +99,19 @@ def sem_routine(streets, cross, sem):
 				sleep(new.green_time)
 
 	except KeyboardInterrupt:
-		to_quit = True
 		print("Programma interrotto manualmente.")
+	finally:
+		to_quit = True
+		camera.stop()
+
+"""
+Mode 2: TODO
+"""
+
+def update_streets_routine(streets: List[Street]):
+	for street in streets:
+		street.update_priority(random.randint(0, 10))
+
 
 def main():
 	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[1,2,3,4]),

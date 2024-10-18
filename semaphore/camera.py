@@ -1,19 +1,35 @@
 import cv2
 
 class Camera:
-	def __init__(self) -> None:
-		self.cap = cv2.VideoCapture(0)
-		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-		self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+	def __init__(self, filename=None) -> None:
+		
+		self.out = None
+		self.filename = filename
+
+		if self.filename:
+			print(f"Opening file: {self.filename}")
+			self.cap = cv2.VideoCapture(self.filename)
+		else:
+			self.cap = cv2.VideoCapture(2)
+
+			self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+			self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
 
 	def start(self):
 		if not self.cap.isOpened():
-			self.cap.open(0)
+			if self.filename:
+				self.cap.open(self.filename)
+			else:
+				self.cap.open(0)
+		if not self.cap.isOpened():
+			raise RuntimeError("Failed to open camera")
 
 	def get_frame(self):
 		ret, frame = self.cap.read()
 		if not ret:
 			raise RuntimeError("Failed to capture image")
+
 		return frame
 
 	def stop(self):
@@ -26,12 +42,23 @@ class Camera:
 		if cv2.waitKey(1) & 0xFF == ord("q"):
 			return False
 		return True
+	
+	def start_recording(self, filename='output.mp4'):
+		# formato: mp4
+		self.out = cv2.VideoWriter(f"recs/{filename}", cv2.VideoWriter_fourcc(*'mp4v'), 30, (1280, 720))
+
+	def stop_recording(self):
+		self.out.release()
 
 if __name__ == "__main__":
-	cam = Camera()
+	import sys
+	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else None)
 	cam.start()
+	# cam.start_recording(sys.argv[1] if len(sys.argv) > 1 else 'output.mp4')
 	while True:
 		frame = cam.get_frame()
 		if not cam.show_frame(frame):
 			break
+		# cam.out.write(frame)
+	# cam.stop_recording()
 	cam.stop()

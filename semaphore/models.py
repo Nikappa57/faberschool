@@ -9,18 +9,32 @@ class SemState(Enum):
 
 class Element:
 
-	def __init__(self, e_id, *, pin_green, pin_red):
+	def __init__(self, e_id, *, pin_green, pin_red, w_per_sec=1):
 		self.id = e_id
-		self.priority:int = 0
+		self._priority:int = 0
 		self.pin_green = pin_green
 		self.pin_red = pin_red
 		self.pin_yellow = None
+		self.w_per_sec = w_per_sec
+		self.w_time = 0
+		self.state = SemState.RED
 
 	def update_priority(self, count, priority):
-		pass
+		self._priority += count * priority
+
+	def update_wait_time(self, sec=1):
+		if self._priority > 0:
+			self.w_time += self.w_per_sec * sec
+		else:
+			self.w_time = 0
 
 	def reset_priority(self):
-		self.priority = 0
+		self._priority = 0
+		self.w_time = 0
+
+	@property
+	def priority(self):
+		return self._priority * (1 + self.w_time)
 
 	@property
 	def green_time(self):
@@ -47,7 +61,7 @@ class Street(Element):
 
 	def update_priority(self, count, priority=1):
 		self.count = count
-		self.priority += priority * count
+		self._priority += priority * count
 
 	def is_inside(self, bb):
 		x1, y1, x2, y2 = self.frame_xyxy
@@ -76,8 +90,8 @@ class Cross(Element):
 	def update_priority(self, btn_nbr, priority=2):
 		self.btn_1 |= (btn_nbr == 0)
 		self.btn_2 |= (btn_nbr == 1)
-		self.priority = priority * (int(self.btn_1) + int(self.btn_2))
-		print("Priority:", self.priority)
+		self._priority = priority * (int(self.btn_1) + int(self.btn_2))
+		print("Priority:", self._priority)
 
 
 class Action:
@@ -98,6 +112,7 @@ class Action:
 
 	def update(self, state):
 		for element in self.elements:
+			# TODO: element.state = state
 			self.sem_i.update(element, state)
 			if state == SemState.GREEN:
 				print(f"Green for {element}")
