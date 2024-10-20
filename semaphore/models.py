@@ -1,5 +1,5 @@
 from enum import Enum
-
+from time import time
 
 class SemState(Enum):
 	RED = 0
@@ -9,7 +9,7 @@ class SemState(Enum):
 
 class Element:
 
-	def __init__(self, e_id, *, pin_green, pin_red, w_per_sec=1):
+	def __init__(self, e_id, *, pin_green, pin_red, w_per_sec=0.2):
 		self.id = e_id
 		self._priority:int = 0
 		self.pin_green = pin_green
@@ -18,14 +18,21 @@ class Element:
 		self.w_per_sec = w_per_sec
 		self.w_time = 0
 		self.state = SemState.RED
+		self.last_update_time = None
 
 	def update_priority(self, count, priority):
 		self._priority += count * priority
 
-	def update_wait_time(self, sec=1):
-		if self._priority > 0:
-			self.w_time += self.w_per_sec * sec
-		else:
+	def update_wait_time(self, time):
+		"""Add wait time to not green elements"""
+		# if the semaphore is green or yellow, the waiting time is reset
+		if self.state in (SemState.GREEN, SemState.YELLOW):
+			return
+		# if the semaphore is red, the waiting time is updated
+		
+		if self._priority > 0: # if the semaphore has someone waiting on it increase the waiting time
+			self.w_time += self.w_per_sec * time
+		else:	# if the semaphore is empty, reset the waiting time
 			self.w_time = 0
 
 	def reset_priority(self):
@@ -34,7 +41,7 @@ class Element:
 
 	@property
 	def priority(self):
-		return self._priority * (1 + self.w_time)
+		return self._priority * (1 + self.w_time) # the waiting time is added to the priority
 
 	@property
 	def green_time(self):
@@ -68,9 +75,13 @@ class Street(Element):
 		return x1 <= bb[0] and y1 <= bb[1] and x2 >= bb[2] and y2 >= bb[3]
 
 	@property
-	def green_time(self):
+	def best_green_time(self):
 		return max(self.min_green_time,
 				min(self.max_green_time, self.count * self.seconds_per_elm))
+
+	@property
+	def green_time(self):
+		return self.min_green_time
 
 
 class Cross(Element):
@@ -85,6 +96,10 @@ class Cross(Element):
 
 	@property
 	def green_time(self):
+		return self._green_time
+	
+	@property
+	def best_green_time(self):
 		return self._green_time
 
 	def update_priority(self, btn_nbr, priority=2):
@@ -104,15 +119,19 @@ class Action:
 
 	@property
 	def priority(self):
-		return sum([e.priority for e in self.elements]) + self.base_priority
+		return sum([e.priority for e in self.elements])
+
+	@property
+	def best_green_time(self):
+		return max([e.best_green_time for e in self.elements])
 
 	@property
 	def green_time(self):
 		return max([e.green_time for e in self.elements])
 
-	def update(self, state):
+	def update(self, state, update_wait_time=False):
 		for element in self.elements:
-			# TODO: element.state = state
+			element.state = state
 			self.sem_i.update(element, state)
 			if state == SemState.GREEN:
 				print(f"Green for {element}")
@@ -129,7 +148,8 @@ class PriorityActionQueue:
 
 	def enqueue(self, action):
 		self.queue.append(action)
-		self.queue.sort(key=lambda x: x.priority, reverse=True)
+		# sort the queue by priority and id
+		self.queue.sort(key=lambda x: (x.priority, 1 / (x.id + 1)), reverse=True)
 
 	def dequeue(self):
 		return self.queue.pop(0)
