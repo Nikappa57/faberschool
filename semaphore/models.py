@@ -1,5 +1,4 @@
 from enum import Enum
-from time import time
 from typing import List
 
 class SemState(Enum):
@@ -42,7 +41,7 @@ class Element:
 
 	@property
 	def priority(self):
-		return self._priority * (1 + self.w_time) # the waiting time is added to the priority
+		return round(self._priority * (1 + self.w_time), 2) # the waiting time is added to the priority
 
 	@property
 	def green_time(self):

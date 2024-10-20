@@ -176,9 +176,9 @@ def main():
 	sem.setup()
 
 	actions = [
-		Action(0, [streets[0], cross[0]], sem_i=sem),
+		Action(0, [streets[0], streets[3], cross[0]], sem_i=sem),
 		Action(1, [streets[1], cross[0]], sem_i=sem),
-		Action(2, [streets[2], cross[1]], sem_i=sem),
+		# Action(2, [streets[2], cross[1]], sem_i=sem),
 		Action(3, [streets[3], cross[2]], sem_i=sem)
 	]
 
