@@ -68,6 +68,8 @@ if __name__ == "__main__":
 			break
 		if not cam.show_frame(frame):
 			break
+		if cam.out:
+			cam.out.write(frame)
 		# cam.out.write(frame)
 	# cam.stop_recording()
 	cam.stop()

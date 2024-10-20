@@ -19,10 +19,15 @@ def btn_check_routine(sem_i: SemaphoreInterface):
 		sem_i.check_btns()
 		sleep(0.5)
 
-def draw_elm_zone(frame, elm):
+def draw_elm_zone(frame, elm, count):
 	x1, y1, x2, y2 = elm.frame_xyxy
-	cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-	
+	color = (0, 255, 0) if elm.state == SemState.GREEN else (0, 0, 255) if elm.state == SemState.RED else (0, 255, 255)
+	cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+	# add background to text
+	info = f"[{elm.id}]: c: {count} p: {elm.priority}"
+	(text_width, text_height), baseline = cv2.getTextSize(info, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+	cv2.rectangle(frame, (x2-text_width, y2 - text_height - baseline), (x2, y2), (255, 0, 0), -1)
+	cv2.putText(frame, info, (x2-text_width, y2-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 	return frame
 
 def update_streets(streets: List[Street], camera: Camera, cv: Cv, display=False):
@@ -39,11 +44,11 @@ def update_streets(streets: List[Street], camera: Camera, cv: Cv, display=False)
 		filtered_result = [r for r in results if street.is_inside(r)]
 		street.update_priority(len(filtered_result))
 
-		# results = results - filtered_result
-
 		# draw street zone
 		if display:
-			frame = draw_elm_zone(frame, street)
+			frame = draw_elm_zone(frame, street, len(filtered_result))
+		# results = results - filtered_result
+
 	if display and not camera.show_frame(frame):
 		to_quit = True
 
@@ -120,9 +125,9 @@ def update_streets_routine(streets: List[Street]):
 
 def sem2_routine(actions: List[Action], elements: List[Element]):
 	global to_quit
-	old = None
-	STEP_TIME = 2
-	YELLOW_TIME = 2
+	old:Action = None
+	STEP_TIME = 1
+	YELLOW_TIME = 1
 
 	# create queue
 	queue = PriorityActionQueue()
@@ -131,7 +136,7 @@ def sem2_routine(actions: List[Action], elements: List[Element]):
 
 	try:
 		while not to_quit and not queue.empty():
-			new = queue.head()
+			new:Action = queue.head()
 
 			if new == old:
 				green_time = STEP_TIME
@@ -148,6 +153,8 @@ def sem2_routine(actions: List[Action], elements: List[Element]):
 			for e in elements:
 				e.update_wait_time(green_time)
 
+			old = new
+
 			sleep(green_time)
 	except KeyboardInterrupt:
 		print("Programma interrotto manualmente.")
@@ -156,10 +163,10 @@ def sem2_routine(actions: List[Action], elements: List[Element]):
 
 
 def main():
-	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[1,1,300,300]),
-			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[350,1,500,500]),
-			   Street(3, pin_green=16, pin_yellow=20, pin_red=26, frame_xyxy=[100,200,300,400]),
-			   Street(4, pin_green=39, pin_yellow=38, pin_red=40, frame_xyxy=[400,400,600,600])]
+	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[0,350,690,660]),
+			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[780,450,1280,720]),
+			   Street(3, pin_green=16, pin_yellow=20, pin_red=26, frame_xyxy=[380,0,713,190]),
+			   Street(4, pin_green=39, pin_yellow=38, pin_red=40, frame_xyxy=[776,80,1078,225])]
 
 	cross = [Cross(5, pin_green=12, pin_red=18, pin_btn1=24, pin_btn2=25),
 			 Cross(6, pin_green=7, pin_red=8, pin_btn1=10, pin_btn2=9),
@@ -169,9 +176,10 @@ def main():
 	sem.setup()
 
 	actions = [
-		Action(0, [streets[0], cross[2]], sem_i=sem),
-		Action(1, [streets[2], cross[0]], sem_i=sem),
-		Action(2, [streets[3], cross[1]], sem_i=sem)
+		Action(0, [streets[0], cross[0]], sem_i=sem),
+		Action(1, [streets[1], cross[0]], sem_i=sem),
+		Action(2, [streets[2], cross[1]], sem_i=sem),
+		Action(3, [streets[3], cross[2]], sem_i=sem)
 	]
 
 	btn_check = Thread(target=btn_check_routine, args=(sem,))

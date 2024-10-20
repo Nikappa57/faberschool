@@ -1,5 +1,6 @@
 from enum import Enum
 from time import time
+from typing import List
 
 class SemState(Enum):
 	RED = 0
@@ -57,7 +58,7 @@ class Element:
 class Street(Element):
 
 	def __init__(self, e_id, *, pin_green, pin_yellow, pin_red, frame_xyxy,
-				min_green_time=5, max_green_time=20, seconds_per_elm=1):
+				min_green_time=2, max_green_time=20, seconds_per_elm=1):
 		super().__init__(e_id, pin_green=pin_green, pin_red=pin_red)
 		self.min_green_time = min_green_time
 		self.max_green_time = max_green_time
@@ -68,11 +69,30 @@ class Street(Element):
 
 	def update_priority(self, count, priority=1):
 		self.count = count
-		self._priority += priority * count
+		self._priority = priority * count
 
 	def is_inside(self, bb):
 		x1, y1, x2, y2 = self.frame_xyxy
-		return x1 <= bb[0] and y1 <= bb[1] and x2 >= bb[2] and y2 >= bb[3]
+		bb_x1, bb_y1, bb_x2, bb_y2, *_ = bb
+
+		# Calcola le coordinate dell'intersezione
+		inter_x1 = max(x1, bb_x1)
+		inter_y1 = max(y1, bb_y1)
+		inter_x2 = min(x2, bb_x2)
+		inter_y2 = min(y2, bb_y2)
+
+		# Calcola l'area dell'intersezione
+		inter_width = max(0, inter_x2 - inter_x1)
+		inter_height = max(0, inter_y2 - inter_y1)
+		inter_area = inter_width * inter_height
+
+		# Calcola l'area del bounding box bb
+		bb_width = bb_x2 - bb_x1
+		bb_height = bb_y2 - bb_y1
+		bb_area = bb_width * bb_height
+
+		# Confronta l'area di intersezione con il 60% dell'area di bb
+		return inter_area >= 0.6 * bb_area
 
 	@property
 	def best_green_time(self):
@@ -111,7 +131,7 @@ class Cross(Element):
 
 class Action:
 
-	def __init__(self, a_id, elements, sem_i, base_priority=0):
+	def __init__(self, a_id, elements: List[Element], sem_i, base_priority=0):
 		self.id = a_id
 		self.elements = elements
 		self.sem_i = sem_i
@@ -129,7 +149,7 @@ class Action:
 	def green_time(self):
 		return max([e.green_time for e in self.elements])
 
-	def update(self, state, update_wait_time=False):
+	def update(self, state):
 		for element in self.elements:
 			element.state = state
 			self.sem_i.update(element, state)
@@ -146,16 +166,14 @@ class PriorityActionQueue:
 	def __init__(self):
 		self.queue = []
 
-	def enqueue(self, action):
+	def enqueue(self, action: Action):
 		self.queue.append(action)
-		# sort the queue by priority and id
-		self.queue.sort(key=lambda x: (x.priority, 1 / (x.id + 1)), reverse=True)
 
-	def dequeue(self):
-		return self.queue.pop(0)
+	def dequeue(self) -> Action:
+		return self.queue.pop(self.queue.index(self.head()))
 
-	def empty(self):
+	def empty(self) -> bool:
 		return len(self.queue) == 0
 
-	def head(self):
-		return self.queue[0]
+	def head(self) -> Action:
+		return max(self.queue, key=lambda x: (x.priority, 1 / (x.id + 1)))

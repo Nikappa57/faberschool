@@ -1,6 +1,5 @@
 import os
 import cv2
-import logging
 from ultralytics import YOLO
 
 
@@ -25,7 +24,7 @@ class Cv:
 		resized_frame = cv2.resize(frame, (640, 480))
 
 		# Perform inference on the resized frame
-		info = self.model(resized_frame)
+		info = self.model(resized_frame, verbose=False)
 
 		result = []
 		for elm in info:
@@ -73,7 +72,7 @@ if __name__ == "__main__":
 			frame = cv.draw(frame, results)
 			if not cam.show_frame(frame):
 				break
-			cv2.waitKey(0)
+			cv2.waitKey(1)
 	finally:
 		cam.stop_recording()
 		cam.stop()
