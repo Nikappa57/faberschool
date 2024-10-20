@@ -1,5 +1,6 @@
 import os
 import cv2
+import logging
 from ultralytics import YOLO
 
 
@@ -54,20 +55,25 @@ class Cv:
 
 		return frame
 
-
 if __name__ == "__main__":
 	from camera import Camera
 	import sys
 
 	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else None)
-	cv = Cv(model="last.pt")
+	cv = Cv(model="best.pt")
 	cam.start()
-	while True:
-		frame = cam.get_frame()
-
-		results = cv.inference(frame)
-		frame = cv.draw(frame, results)
-		if not cam.show_frame(frame):
-			break
-
-	cam.stop()
+	cam.start_recording(f"output_{sys.argv[1].split("/")[-1] if len(sys.argv) > 1 else 'cam.mp4'}")
+	try:
+		while True:
+			frame = cam.get_frame()
+			if frame is None:
+				break
+			cam.out.write(frame)
+			results = cv.inference(frame)
+			frame = cv.draw(frame, results)
+			if not cam.show_frame(frame):
+				break
+			cv2.waitKey(0)
+	finally:
+		cam.stop_recording()
+		cam.stop()
