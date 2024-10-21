@@ -5,10 +5,10 @@ from ultralytics import YOLO
 
 class Cv:
 
-	def __init__(self, model, cncc=False):
+	def __init__(self, model, ncnn=False):
 		self.model = YOLO(model, task='detect')
 
-		if cncc:
+		if ncnn:
 			# https://docs.ultralytics.com/guides/raspberry-pi/#inference-with-camera
 
 			if not os.path.exists(model.replace(".pt", "_ncnn_model")):

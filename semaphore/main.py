@@ -59,7 +59,7 @@ def update_streets(streets: List[Street], actions: List[Action], camera: Camera,
 
 #### MODE 1 ####
 
-def sem1_routine(streets, actions, camera_src=None, model="best.pt", cncc=False):
+def sem1_routine(streets, actions, camera_src=None, model="best.pt", ncnn=False):
 	"""
 	Mode 1: Classic Semaphore
 	"""
@@ -68,7 +68,7 @@ def sem1_routine(streets, actions, camera_src=None, model="best.pt", cncc=False)
 
 	try:
 		camera = Camera(camera_src)
-		cv = Cv(model, cncc)
+		cv = Cv(model, ncnn)
 
 		camera.start()
 
@@ -120,10 +120,10 @@ def sem1_routine(streets, actions, camera_src=None, model="best.pt", cncc=False)
 
 def update_streets_routine(streets: List[Street], actions: List[Action],
 						   camera_src:str=None, model:str="best.pt",
-						   cncc:bool=False):
+						   ncnn:bool=False):
 	global to_quit
 	camera = Camera(camera_src)
-	cv = Cv(model, cncc)
+	cv = Cv(model, ncnn)
 
 	while not to_quit:
 		update_streets(streets, actions, camera, cv, display=True)
@@ -175,13 +175,13 @@ def main():
 	parser.add_argument("--mode", "-m", type=int, default=2, help="Mode of operation")
 	parser.add_argument("--camera", "-c", type=str, default=None, help="Camera source")
 	parser.add_argument("--model", "-md", type=str, default="best.pt", help="Model file")
-	parser.add_argument("--cncc", type=bool, default=False, help="Yolo cncc export")
+	parser.add_argument("--ncnn", type=bool, default=False, help="Yolo ncnn export")
 	args = parser.parse_args()
 
 	print(f"Mode: {args.mode}")
 	print(f"Camera: {args.camera}")
 	print(f"Model: {args.model}")
-	print(f"CNCC: {args.cncc}")
+	print(f"CNCC: {args.ncnn}")
 
 	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[0,270,580,420], min_green_time=5),
 			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[817,128,1167,295], min_green_time=5),
@@ -206,13 +206,13 @@ def main():
 
 	if args.mode == 1:
 		print("Mode 1")
-		sem1_routine(streets, actions, camera_src=args.camera, model=args.model, cncc=args.cncc)
+		sem1_routine(streets, actions, camera_src=args.camera, model=args.model, ncnn=args.ncnn)
 	elif args.mode == 2:
 		print("Mode 2")
 		sem_thread = Thread(target=sem2_routine, args=(actions, streets+cross))
 		sem_thread.start()
 
-		update_streets_routine(streets, actions, camera_src=args.camera, model=args.model, cncc=args.cncc)
+		update_streets_routine(streets, actions, camera_src=args.camera, model=args.model, ncnn=args.ncnn)
 
 		sem_thread.join()
 	btn_check.join()
