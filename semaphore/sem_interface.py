@@ -1,4 +1,4 @@
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from typing import List
 
 from models import Street, Cross, SemState
@@ -10,8 +10,7 @@ class SemaphoreInterface:
 		self.cross = cross
 
 	def setup(self):
-		return
-		GPIO.setmode(GPIO.BCM)
+		GPIO.setmode(GPIO.BOARD)
 		for s in self.streets:
 			GPIO.setup(s.pin_green, GPIO.OUT)
 			GPIO.setup(s.pin_red, GPIO.OUT)
@@ -19,15 +18,14 @@ class SemaphoreInterface:
 		for c in self.cross:
 			GPIO.setup(c.pin_green, GPIO.OUT)
 			GPIO.setup(c.pin_red, GPIO.OUT)
-			GPIO.setup(c.btn_1, GPIO.IN)
-			GPIO.setup(c.btn_2, GPIO.IN)
+			# GPIO.setup(c.btn_1, GPIO.IN)
+			# GPIO.setup(c.btn_2, GPIO.IN)
 		
 		for e in self.streets + self.cross:
 			self.update(e, SemState.RED)
 
 	def update(self, elem, status):
 		print("Updating element", elem, "with status", status)
-		return
 		if isinstance(elem, Cross):
 			self._update_cross(elem, status)
 		elif isinstance(elem, Street):
@@ -36,7 +34,6 @@ class SemaphoreInterface:
 			print("Unknown element type")
 
 	def _update_street(self, elem, status):
-		return 
 		if status == SemState.RED:
 			GPIO.output(elem.pin_green, GPIO.LOW)
 			GPIO.output(elem.pin_yellow, GPIO.LOW)
@@ -51,7 +48,6 @@ class SemaphoreInterface:
 			GPIO.output(elem.pin_red, GPIO.LOW)
 
 	def _update_cross(self, elem, status):
-		return 
 		if status == SemState.RED or status == SemState.YELLOW:
 			GPIO.output(elem.pin_green, GPIO.LOW)
 			GPIO.output(elem.pin_red, GPIO.HIGH)
@@ -66,3 +62,4 @@ class SemaphoreInterface:
 				c.update_priority(0)
 			if GPIO.input(c.pin_btn2):
 				c.update_priority(1)
+

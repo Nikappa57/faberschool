@@ -183,14 +183,12 @@ def main():
 	print(f"Model: {args.model}")
 	print(f"CNCC: {args.ncnn}")
 
-	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[0,270,580,420], min_green_time=5),
-			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[817,128,1167,295], min_green_time=5),
-			   Street(3, pin_green=16, pin_yellow=20, pin_red=26, frame_xyxy=[630,0,770,153], min_green_time=7),
-			   Street(4, pin_green=39, pin_yellow=38, pin_red=40, frame_xyxy=[600,471,840,717], min_green_time=7)]
+	streets = [Street(2, pin_green=26, pin_yellow=23, pin_red=22, frame_xyxy=[0,270,580,420], min_green_time=5),
+			   Street(3, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[817,128,1167,295], min_green_time=5),
+			   Street(4, pin_green=40, pin_yellow=37, pin_red=36, frame_xyxy=[630,0,770,153], min_green_time=7),
+			   Street(1, pin_green=11, pin_yellow=8, pin_red=3, frame_xyxy=[600,471,840,717], min_green_time=7)]
 
-	cross = [Cross(5, pin_green=12, pin_red=18, pin_btn1=24, pin_btn2=25),
-			 Cross(6, pin_green=7, pin_red=8, pin_btn1=10, pin_btn2=9),
-			 Cross(7, pin_green=11, pin_red=4, pin_btn1=14, pin_btn2=15)]
+	cross = [Cross(5, pin_green=19, pin_red=15, pin_btn1=-1, pin_btn2=-1)]
 
 	sem = SemaphoreInterface(streets, cross)
 	sem.setup()
