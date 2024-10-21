@@ -62,18 +62,19 @@ if __name__ == "__main__":
 	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else None)
 	cv = Cv(model="best.pt")
 	cam.start()
-	cam.start_recording(f"output_{sys.argv[1].split("/")[-1] if len(sys.argv) > 1 else 'cam.mp4'}")
+	# cam.start_recording(f"output_{sys.argv[1].split("/")[-1] if len(sys.argv) > 1 else 'cam.mp4'}")
 	try:
 		while True:
 			frame = cam.get_frame()
 			if frame is None:
 				break
-			cam.out.write(frame)
+			if cam.out:
+				cam.out.write(frame)
 			results = cv.inference(frame)
 			frame = cv.draw(frame, results)
 			if not cam.show_frame(frame):
 				break
 			cv2.waitKey(1)
 	finally:
-		cam.stop_recording()
+		# cam.stop_recording()
 		cam.stop()

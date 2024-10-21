@@ -61,7 +61,7 @@ if __name__ == "__main__":
 	cam = Camera()
 
 	cam.start()
-	cam.start_recording(sys.argv[1])
+	# cam.start_recording(sys.argv[1])
 	while True:
 		frame = cam.get_frame()
 		if frame is None:
@@ -70,5 +70,5 @@ if __name__ == "__main__":
 			break
 		if cam.out:
 			cam.out.write(frame)
-	cam.stop_recording()
+	# cam.stop_recording()
 	cam.stop()
