@@ -58,10 +58,10 @@ class Camera:
 
 if __name__ == "__main__":
 	import sys
-	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else None)
+	cam = Camera()
 
 	cam.start()
-	# cam.start_recording(sys.argv[1] if len(sys.argv) > 1 else 'output.mp4')
+	cam.start_recording(sys.argv[1])
 	while True:
 		frame = cam.get_frame()
 		if frame is None:
@@ -70,6 +70,5 @@ if __name__ == "__main__":
 			break
 		if cam.out:
 			cam.out.write(frame)
-		# cam.out.write(frame)
-	# cam.stop_recording()
+	cam.stop_recording()
 	cam.stop()

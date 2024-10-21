@@ -1,7 +1,7 @@
 import cv2
 import sys
-import random
-from time import sleep, time
+import argparse
+from time import sleep
 from typing import List
 from threading import Thread
 
@@ -19,26 +19,31 @@ def btn_check_routine(sem_i: SemaphoreInterface):
 		sem_i.check_btns()
 		sleep(0.5)
 
-def draw_elm_zone(frame, elm, count):
+def draw_elm_zone(frame, elm:Element, actions: List[Action], count:int):
 	x1, y1, x2, y2 = elm.frame_xyxy
 	color = (0, 255, 0) if elm.state == SemState.GREEN else (0, 0, 255) if elm.state == SemState.RED else (0, 255, 255)
 	cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-	# add background to text
-	info = f"[{elm.id}]: c: {count} p: {elm.priority}"
+	# add background to 
+	
+	priority = max(a.priority for a in actions if elm in a.elements)
+
+	info = f"[{elm.id}]: c: {elm.count} p: {priority}"
 	(text_width, text_height), baseline = cv2.getTextSize(info, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
 	cv2.rectangle(frame, (x2-text_width, y2 - text_height - baseline), (x2, y2), (255, 0, 0), -1)
 	cv2.putText(frame, info, (x2-text_width, y2-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 	return frame
 
-def update_streets(streets: List[Street], camera: Camera, cv: Cv, display=False):
+def update_streets(streets: List[Street], actions: List[Action], camera: Camera, cv: Cv, display=False):
 	global to_quit
+
 	frame = camera.get_frame()
+
 	if frame is None:
 		to_quit = True
 		return
-	results = cv.inference(frame, ids=[0])
+	results = cv.inference(frame, ids=[0], threshold=0.7)
 	if display:
-		frame = cv.draw(frame, results)
+		frame_draw = cv.draw(frame, results)
 
 	for street in streets:
 		filtered_result = [r for r in results if street.is_inside(r)]
@@ -46,14 +51,15 @@ def update_streets(streets: List[Street], camera: Camera, cv: Cv, display=False)
 
 		# draw street zone
 		if display:
-			frame = draw_elm_zone(frame, street, len(filtered_result))
+			frame_draw = draw_elm_zone(frame_draw, street, actions, len(filtered_result))
 		# results = results - filtered_result
 
-	if display and not camera.show_frame(frame):
+	if display and not camera.show_frame(frame_draw):
 		to_quit = True
 
+#### MODE 1 ####
 
-def sem1_routine(streets, actions):
+def sem1_routine(streets, actions, camera_src=None, model="best.pt", cncc=False):
 	"""
 	Mode 1: Classic Semaphore
 	"""
@@ -61,8 +67,8 @@ def sem1_routine(streets, actions):
 	queue = PriorityActionQueue()
 
 	try:
-		camera = Camera(sys.argv[1] if len(sys.argv) > 1 else None)
-		cv = Cv("last.pt")
+		camera = Camera(camera_src)
+		cv = Cv(model, cncc)
 
 		camera.start()
 
@@ -78,11 +84,10 @@ def sem1_routine(streets, actions):
 				# Giallo old
 				if old:
 					old.update(SemState.YELLOW)
+					sleep(1)
 
 				# Aggiorna dati numeri di veicoli
-				update_streets(streets, camera, cv)
-
-				sleep(3)
+				update_streets(streets, actions, camera, cv, display=True)
 
 				# Rosso old
 				if old:
@@ -102,7 +107,7 @@ def sem1_routine(streets, actions):
 				# print(f"Crosses: {[str(c) for c in cross]}")
 				# print(f"Street: {[str(l) for l in streets]}")
 				# print(f"Current action: {new}")
-				# print("Green time:", new.green_time)
+				print("Green time:", new.green_time)
 				sleep(new.best_green_time)
 
 	except KeyboardInterrupt:
@@ -113,13 +118,15 @@ def sem1_routine(streets, actions):
 
 #### MODE 2 ####
 
-def update_streets_routine(streets: List[Street]):
+def update_streets_routine(streets: List[Street], actions: List[Action],
+						   camera_src:str=None, model:str="best.pt",
+						   cncc:bool=False):
 	global to_quit
-	camera = Camera(sys.argv[1] if len(sys.argv) > 1 else None)
-	cv = Cv("best.pt")
+	camera = Camera(camera_src)
+	cv = Cv(model, cncc)
 
 	while not to_quit:
-		update_streets(streets, camera, cv, display=True)
+		update_streets(streets, actions, camera, cv, display=True)
 
 	camera.stop()
 
@@ -127,7 +134,7 @@ def sem2_routine(actions: List[Action], elements: List[Element]):
 	global to_quit
 	old:Action = None
 	STEP_TIME = 1
-	YELLOW_TIME = 1
+	YELLOW_TIME = 3.5
 
 	# create queue
 	queue = PriorityActionQueue()
@@ -163,10 +170,23 @@ def sem2_routine(actions: List[Action], elements: List[Element]):
 
 
 def main():
-	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[0,350,690,660]),
-			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[780,450,1280,720]),
-			   Street(3, pin_green=16, pin_yellow=20, pin_red=26, frame_xyxy=[380,0,713,190]),
-			   Street(4, pin_green=39, pin_yellow=38, pin_red=40, frame_xyxy=[776,80,1078,225])]
+	# setup argparser
+	parser = argparse.ArgumentParser(description="Semaphore controller")
+	parser.add_argument("--mode", "-m", type=int, default=2, help="Mode of operation")
+	parser.add_argument("--camera", "-c", type=str, default=None, help="Camera source")
+	parser.add_argument("--model", "-md", type=str, default="best.pt", help="Model file")
+	parser.add_argument("--cncc", type=bool, default=False, help="Yolo cncc export")
+	args = parser.parse_args()
+
+	print(f"Mode: {args.mode}")
+	print(f"Camera: {args.camera}")
+	print(f"Model: {args.model}")
+	print(f"CNCC: {args.cncc}")
+
+	streets = [Street(1, pin_green=17, pin_yellow=18, pin_red=27, frame_xyxy=[0,270,580,420], min_green_time=5),
+			   Street(2, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[817,128,1167,295], min_green_time=5),
+			   Street(3, pin_green=16, pin_yellow=20, pin_red=26, frame_xyxy=[630,0,770,153], min_green_time=7),
+			   Street(4, pin_green=39, pin_yellow=38, pin_red=40, frame_xyxy=[600,471,840,717], min_green_time=7)]
 
 	cross = [Cross(5, pin_green=12, pin_red=18, pin_btn1=24, pin_btn2=25),
 			 Cross(6, pin_green=7, pin_red=8, pin_btn1=10, pin_btn2=9),
@@ -176,29 +196,26 @@ def main():
 	sem.setup()
 
 	actions = [
-		Action(0, [streets[0], streets[3], cross[0]], sem_i=sem),
-		Action(1, [streets[1], cross[0]], sem_i=sem),
-		# Action(2, [streets[2], cross[1]], sem_i=sem),
-		Action(3, [streets[3], cross[2]], sem_i=sem)
+		Action(0, [streets[0], streets[1], cross[0]], sem_i=sem),
+		Action(1, [streets[2]], sem_i=sem),
+		Action(2, [streets[3]], sem_i=sem)
 	]
 
 	btn_check = Thread(target=btn_check_routine, args=(sem,))
 	btn_check.start()
-	
-	# sem_thread = Thread(target=sem1_routine, args=(streets, actions))
-	# sem_thread.start()
 
-	sem_thread = Thread(target=sem2_routine, args=(actions, streets+cross))
-	sem_thread.start()
+	if args.mode == 1:
+		print("Mode 1")
+		sem1_routine(streets, actions, camera_src=args.camera, model=args.model, cncc=args.cncc)
+	elif args.mode == 2:
+		print("Mode 2")
+		sem_thread = Thread(target=sem2_routine, args=(actions, streets+cross))
+		sem_thread.start()
 
-	update_streets_routine(streets)
+		update_streets_routine(streets, actions, camera_src=args.camera, model=args.model, cncc=args.cncc)
 
-	# upd_street = Thread(target=update_streets_routine, args=(streets,))
-	# upd_street.start()
-
-	sem_thread.join()
+		sem_thread.join()
 	btn_check.join()
-	# upd_street.join()
 
 
 if __name__ == "__main__":

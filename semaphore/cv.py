@@ -45,14 +45,15 @@ class Cv:
 		return result
 
 	def draw(self, frame, results):
+		result_frame = frame.copy()
 		for x1, y1, x2, y2, name, conf in results:
-			cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+			cv2.rectangle(result_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 			label = f"{name} {conf:.2f}"
 			(text_width, text_height), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-			cv2.rectangle(frame, (x1, y1 - text_height - baseline), (x1 + text_width, y1), (0, 255, 0), -1)
-			cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+			cv2.rectangle(result_frame, (x1, y1 - text_height - baseline), (x1 + text_width, y1), (0, 255, 0), -1)
+			cv2.putText(result_frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-		return frame
+		return result_frame
 
 if __name__ == "__main__":
 	from camera import Camera

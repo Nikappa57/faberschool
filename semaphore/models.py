@@ -9,14 +9,13 @@ class SemState(Enum):
 
 class Element:
 
-	def __init__(self, e_id, *, pin_green, pin_red, w_per_sec=0.2):
+	def __init__(self, e_id, *, pin_green, pin_red):
 		self.id = e_id
 		self._priority:int = 0
 		self.pin_green = pin_green
 		self.pin_red = pin_red
 		self.pin_yellow = None
-		self.w_per_sec = w_per_sec
-		self.w_time = 0
+		self.wait_time = 0
 		self.state = SemState.RED
 		self.last_update_time = None
 
@@ -31,17 +30,17 @@ class Element:
 		# if the semaphore is red, the waiting time is updated
 		
 		if self._priority > 0: # if the semaphore has someone waiting on it increase the waiting time
-			self.w_time += self.w_per_sec * time
+			self.wait_time += time
 		else:	# if the semaphore is empty, reset the waiting time
-			self.w_time = 0
+			self.wait_time = 0
 
 	def reset_priority(self):
 		self._priority = 0
-		self.w_time = 0
+		self.wait_time = 0
 
 	@property
 	def priority(self):
-		return round(self._priority * (1 + self.w_time), 2) # the waiting time is added to the priority
+		return self._priority # the waiting time is added to the priority
 
 	@property
 	def green_time(self):
@@ -57,7 +56,7 @@ class Element:
 class Street(Element):
 
 	def __init__(self, e_id, *, pin_green, pin_yellow, pin_red, frame_xyxy,
-				min_green_time=2, max_green_time=20, seconds_per_elm=1):
+				min_green_time=5, max_green_time=20, seconds_per_elm=1):
 		super().__init__(e_id, pin_green=pin_green, pin_red=pin_red)
 		self.min_green_time = min_green_time
 		self.max_green_time = max_green_time
@@ -130,15 +129,19 @@ class Cross(Element):
 
 class Action:
 
-	def __init__(self, a_id, elements: List[Element], sem_i, base_priority=0):
+	def __init__(self, a_id, elements: List[Element], sem_i, time_w=0.04):
 		self.id = a_id
 		self.elements = elements
 		self.sem_i = sem_i
-		self.base_priority = base_priority
+		self.time_w = time_w
+
+	def time_priority(self, time):
+		return round(self.time_w * time * time, 2)
 
 	@property
 	def priority(self):
-		return sum([e.priority for e in self.elements])
+		return round(sum([e.priority for e in self.elements])
+			+ self.time_priority(max([e.wait_time for e in self.elements])), 2)
 
 	@property
 	def best_green_time(self):
