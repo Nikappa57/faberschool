@@ -185,10 +185,10 @@ def main():
 	args = parser.parse_args()
 
 	# List of streets
-	streets = [Street(2, pin_green=26, pin_yellow=23, pin_red=22, frame_xyxy=[0,270,580,420], min_green_time=5),
-			   Street(3, pin_green=33, pin_yellow=32, pin_red=29, frame_xyxy=[817,128,1167,295], min_green_time=5),
-			   Street(4, pin_green=40, pin_yellow=37, pin_red=36, frame_xyxy=[630,0,770,153], min_green_time=7),
-			   Street(1, pin_green=11, pin_yellow=8, pin_red=3, frame_xyxy=[600,471,840,717], min_green_time=7)]
+	streets = [Street(2, pin_green=26, pin_yellow=23, pin_red=22, frame_xyxy=[0,323,479,490], min_green_time=5),
+			   Street(3, pin_green=33, pin_yellow=32, pin_red=29, frame_xyxy=[790,215,1106,360], min_green_time=5),
+			   Street(4, pin_green=40, pin_yellow=37, pin_red=36, frame_xyxy=[593,0,730,210], min_green_time=7),
+			   Street(1, pin_green=11, pin_yellow=8, pin_red=3, frame_xyxy=[530,554,761,717], min_green_time=7)]
 
 	# List of cross
 	cross = [Cross(5, pin_green=19, pin_red=15, pin_btn1=13, pin_btn2=21)]
