@@ -125,6 +125,8 @@ class Cross(Element):
 		self.btn_1 = self.btn_2 = False
 
 	def update_priority(self, btn_nbr, priority=2):
+		if self.state == SemState.GREEN:
+			return
 		self.btn_1 |= (btn_nbr == 0)
 		self.btn_2 |= (btn_nbr == 1)
 		self._priority = priority * (int(self.btn_1) + int(self.btn_2))
