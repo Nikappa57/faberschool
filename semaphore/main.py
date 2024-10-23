@@ -69,8 +69,6 @@ def sem1_routine(streets, actions, camera_src=None, model="best.pt", ncnn=False)
 		camera = Camera(camera_src)
 		cv = Cv(model, ncnn)
 
-		camera.start()
-
 		old = None
 
 		while not to_quit:
@@ -118,10 +116,10 @@ def sem1_routine(streets, actions, camera_src=None, model="best.pt", ncnn=False)
 #### MODE 2 ####
 
 def update_streets_routine(streets: List[Street], actions: List[Action],
-						   camera_src:str=None, model:str="best.pt",
-						   ncnn:bool=False):
+						   camera_src:str=None, camera_stream:str=None,
+							model:str="best.pt", ncnn:bool=False):
 	global to_quit
-	camera = Camera(camera_src)
+	camera = Camera(camera_src, stream=camera_stream)
 	cv = Cv(model, ncnn)
 
 	while not to_quit:
@@ -175,6 +173,7 @@ def main():
 	parser.add_argument("--camera", "-c", type=str, default=None, help="Camera source")
 	parser.add_argument("--model", "-md", type=str, default="best.pt", help="Model file")
 	parser.add_argument("--ncnn", action='store_true', help="Export yolo model as ncnn")
+	parser.add_argument("--stream", "-s", type=str, default=None, help="Stream server")
 	args = parser.parse_args()
 
 	# List of streets
@@ -209,7 +208,7 @@ def main():
 		sem_thread = Thread(target=sem2_routine, args=(actions, streets+cross))
 		sem_thread.start()
 
-		update_streets_routine(streets, actions, camera_src=args.camera, model=args.model, ncnn=args.ncnn)
+		update_streets_routine(streets, actions, camera_src=args.camera, camera_stream=args.stream, model=args.model, ncnn=args.ncnn)
 
 		sem_thread.join()
 	btn_check.join()

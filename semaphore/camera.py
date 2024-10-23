@@ -66,7 +66,7 @@ class Camera:
 		if self.out:
 			self.out.write(frame)
 		if self.stream and self.websocket:
-			asyncio.create_task(self.send_frame(frame))
+			self.loop.run_until_complete(self.send_frame(frame))
 			return True
 		cv2.imshow("RGB", frame)
 		return (cv2.waitKey(1) & 0xFF != ord("q"))
