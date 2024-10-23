@@ -58,9 +58,9 @@ class SemaphoreInterface:
 	
 	def check_btns(self):
 		for c in self.cross:
-			if GPIO.input(c.pin_btn1):
+			if GPIO.input(c.pin_btn1) == GPIO.LOW:
 				c.update_priority(0)
-			if GPIO.input(c.pin_btn2):
+			if GPIO.input(c.pin_btn2) == GPIO.LOW:
 				c.update_priority(1)
 
 	def cleanup_gpio(self):
