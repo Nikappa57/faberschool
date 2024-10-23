@@ -36,7 +36,6 @@ def update_streets(streets: List[Street], actions: List[Action], camera: Camera,
 	global to_quit
 
 	frame = camera.get_frame()
-	print("FRAME!!!")
 
 	if frame is None:
 		to_quit = True
@@ -175,7 +174,7 @@ def main():
 	parser.add_argument("--mode", "-m", type=int, default=2, help="Mode of operation")
 	parser.add_argument("--camera", "-c", type=str, default=None, help="Camera source")
 	parser.add_argument("--model", "-md", type=str, default="best.pt", help="Model file")
-	parser.add_argument("--ncnn", type=bool, default=False, help="Yolo ncnn export")
+	parser.add_argument("--ncnn", action='store_true', help="Export yolo model as ncnn")
 	args = parser.parse_args()
 
 	# List of streets
