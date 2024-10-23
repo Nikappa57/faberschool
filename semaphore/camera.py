@@ -57,24 +57,25 @@ class Camera:
 			self.out = None
 		if self.cap.isOpened():
 			self.cap.release()
-		cv2.destroyAllWindows()
 		if self.stream and self.websocket:
 			self.loop.run_until_complete(self.websocket.close())
+		else:
+			cv2.destroyAllWindows()
 
 	def show_frame(self, frame):
-		cv2.imshow("RGB", frame)
 		if self.out:
 			self.out.write(frame)
 		if self.stream and self.websocket:
 			asyncio.create_task(self.send_frame(frame))
+			return True
+		cv2.imshow("RGB", frame)
 		return (cv2.waitKey(1) & 0xFF != ord("q"))
 
 if __name__ == "__main__":
 	import sys
 	import random
-	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else 0, stream="localhost")  # Replace with your WebSocket server IP
+	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else 0, stream="192.168.1.139:1880")  # Replace with your WebSocket server IP
 
-	cam.start(record=True, filename=f"rec_{random.randint(0, 1000)}.mp4")
 	try:
 		while True:
 			frame = cam.get_frame()
