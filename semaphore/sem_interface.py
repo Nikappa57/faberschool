@@ -12,6 +12,7 @@ class SemaphoreInterface:
 	def setup(self):
 		GPIO.setmode(GPIO.BOARD)
 		for s in self.streets:
+			print(s.pin_green, s.pin_yellow, s.pin_red)
 			GPIO.setup(s.pin_green, GPIO.OUT)
 			GPIO.setup(s.pin_red, GPIO.OUT)
 			GPIO.setup(s.pin_yellow, GPIO.OUT)
@@ -56,10 +57,13 @@ class SemaphoreInterface:
 			GPIO.output(elem.pin_red, GPIO.LOW)
 	
 	def check_btns(self):
-		return 
 		for c in self.cross:
 			if GPIO.input(c.pin_btn1):
 				c.update_priority(0)
 			if GPIO.input(c.pin_btn2):
 				c.update_priority(1)
+
+	def cleanup_gpio(self):
+		# Pulisce la configurazione dei pin GPIO
+		GPIO.cleanup()
 

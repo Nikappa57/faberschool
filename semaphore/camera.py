@@ -4,64 +4,70 @@ import cv2
 
 class Camera:
 
-	def __init__(self, filename=None) -> None:
+	def __init__(self, camera=0) -> None:
 		
 		self.out = None
-		self.filename = filename
+		self.quit = False
 
-		if self.filename:
-			print(f"Opening file: {self.filename}")
-			self.cap = cv2.VideoCapture(self.filename)
-		else:
-			self.cap = cv2.VideoCapture(2)
+		try:
+			camera = int(camera if camera is not None else 0)
+			self.from_rec = False
+		except ValueError:
+			self.from_rec = True
+		self.camera = camera
 
-			self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-			self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+		if self.from_rec:
+			if not os.path.exists(self.camera):
+				raise FileNotFoundError(f"File {self.camera} not found")
+		
+		self.cap = cv2.VideoCapture(self.camera)
 
-	def start(self):
+		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+		self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+		self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+	def start(self, record=False, filename='output.mp4'):
 		if not self.cap.isOpened():
-			if self.filename:
-				self.cap.open(self.filename)
-			else:
-				self.cap.open(0)
+			self.cap.open(self.camera)
 		if not self.cap.isOpened():
-			raise RuntimeError("Failed to open camera")
+			return False
+		if record:
+			if not os.path.exists('recs'):
+				os.makedirs('recs')	
+			# formato: mp4
+			self.out = cv2.VideoWriter(f"recs/{filename}", cv2.VideoWriter_fourcc(*'mp4v'), 30, (1280, 720))
+
+		# start thread
+
+		return True
 
 	def get_frame(self):
 		ret, frame = self.cap.read()
 		if not ret:
 			return None
-
 		return frame
 
 	def stop(self):
+		if self.out:
+			self.out.release()
+			self.out = None
 		if self.cap.isOpened():
 			self.cap.release()
 		cv2.destroyAllWindows()
+		
 
 	def show_frame(self, frame):
 		cv2.imshow("RGB", frame)
-
-		if cv2.waitKey(1) & 0xFF == ord("q"):
-			return False
-		return True
-	
-	def start_recording(self, filename='output.mp4'):
-		if not os.path.exists('recs'):
-			os.makedirs('recs')	
-		# formato: mp4
-		self.out = cv2.VideoWriter(f"recs/{filename}", cv2.VideoWriter_fourcc(*'mp4v'), 30, (1280, 720))
-
-	def stop_recording(self):
-		self.out.release()
+		if self.out:
+			self.out.write(frame)
+		return (cv2.waitKey(1) & 0xFF != ord("q"))
 
 
 if __name__ == "__main__":
 	import sys
-	cam = Camera()
+	cam = Camera(sys.argv[1] if len(sys.argv) > 1 else 0)
 
 	cam.start()
-	# cam.start_recording(sys.argv[1])
 	while True:
 		frame = cam.get_frame()
 		if frame is None:
@@ -70,5 +76,4 @@ if __name__ == "__main__":
 			break
 		if cam.out:
 			cam.out.write(frame)
-	# cam.stop_recording()
 	cam.stop()

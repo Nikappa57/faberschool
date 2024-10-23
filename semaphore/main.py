@@ -1,5 +1,4 @@
 import cv2
-import sys
 import argparse
 from time import sleep
 from typing import List
@@ -37,6 +36,7 @@ def update_streets(streets: List[Street], actions: List[Action], camera: Camera,
 	global to_quit
 
 	frame = camera.get_frame()
+	print("FRAME!!!")
 
 	if frame is None:
 		to_quit = True
@@ -56,6 +56,7 @@ def update_streets(streets: List[Street], actions: List[Action], camera: Camera,
 
 	if display and not camera.show_frame(frame_draw):
 		to_quit = True
+	sleep(5)
 
 #### MODE 1 ####
 
@@ -178,27 +179,27 @@ def main():
 	parser.add_argument("--ncnn", type=bool, default=False, help="Yolo ncnn export")
 	args = parser.parse_args()
 
-	print(f"Mode: {args.mode}")
-	print(f"Camera: {args.camera}")
-	print(f"Model: {args.model}")
-	print(f"CNCC: {args.ncnn}")
-
+	# List of streets
 	streets = [Street(2, pin_green=26, pin_yellow=23, pin_red=22, frame_xyxy=[0,270,580,420], min_green_time=5),
-			   Street(3, pin_green=5, pin_yellow=19, pin_red=6, frame_xyxy=[817,128,1167,295], min_green_time=5),
+			   Street(3, pin_green=33, pin_yellow=32, pin_red=29, frame_xyxy=[817,128,1167,295], min_green_time=5),
 			   Street(4, pin_green=40, pin_yellow=37, pin_red=36, frame_xyxy=[630,0,770,153], min_green_time=7),
 			   Street(1, pin_green=11, pin_yellow=8, pin_red=3, frame_xyxy=[600,471,840,717], min_green_time=7)]
 
+	# List of cross
 	cross = [Cross(5, pin_green=19, pin_red=15, pin_btn1=-1, pin_btn2=-1)]
 
+	# Semaphore interface
 	sem = SemaphoreInterface(streets, cross)
 	sem.setup()
 
+	# Possible actions (ids influence the priority)
 	actions = [
-		Action(0, [streets[0], streets[1], cross[0]], sem_i=sem),
-		Action(1, [streets[2]], sem_i=sem),
-		Action(2, [streets[3]], sem_i=sem)
+		Action(0, [streets[0], streets[1]], sem_i=sem),
+		Action(1, [streets[2], cross[0]], sem_i=sem),
+		Action(2, [streets[3], cross[0]], sem_i=sem)
 	]
 
+	# Thread for checking cross buttons
 	btn_check = Thread(target=btn_check_routine, args=(sem,))
 	btn_check.start()
 
@@ -214,6 +215,7 @@ def main():
 
 		sem_thread.join()
 	btn_check.join()
+	sem.cleanup_gpio()
 
 
 if __name__ == "__main__":
