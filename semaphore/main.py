@@ -56,7 +56,6 @@ def update_streets(streets: List[Street], actions: List[Action], camera: Camera,
 
 	if display and not camera.show_frame(frame_draw):
 		to_quit = True
-	sleep(5)
 
 #### MODE 1 ####
 
