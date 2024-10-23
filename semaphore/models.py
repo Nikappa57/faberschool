@@ -119,6 +119,10 @@ class Cross(Element):
 	@property
 	def best_green_time(self):
 		return self._green_time
+	
+	def reset_priority(self):
+		super().reset_priority()
+		self.btn_1 = self.btn_2 = False
 
 	def update_priority(self, btn_nbr, priority=2):
 		self.btn_1 |= (btn_nbr == 0)
