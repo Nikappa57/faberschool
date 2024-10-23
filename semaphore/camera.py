@@ -42,6 +42,8 @@ class Camera:
 		return True
 
 	def get_frame(self):
+		# skip first
+		self.cap.read()
 		ret, frame = self.cap.read()
 		if not ret:
 			return None
