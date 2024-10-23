@@ -13,10 +13,15 @@ to_quit = False
 
 def btn_check_routine(sem_i: SemaphoreInterface):
 	global to_quit
-
-	while not to_quit:
-		sem_i.check_btns()
-		sleep(0.5)
+	
+	try:
+		while not to_quit:
+			sem_i.check_btns()
+			sleep(0.5)
+	except KeyboardInterrupt:
+		print("Programma interrotto manualmente.")
+	finally:
+		to_quit = True
 
 def draw_elm_zone(frame, elm:Element, actions: List[Action], count:int):
 	x1, y1, x2, y2 = elm.frame_xyxy
@@ -121,11 +126,14 @@ def update_streets_routine(streets: List[Street], actions: List[Action],
 	global to_quit
 	camera = Camera(camera_src, stream=camera_stream)
 	cv = Cv(model, ncnn)
-
-	while not to_quit:
-		update_streets(streets, actions, camera, cv, display=True)
-
-	camera.stop()
+	try:
+		while not to_quit:
+			update_streets(streets, actions, camera, cv, display=True)
+	except KeyboardInterrupt:
+		print("Programma interrotto manualmente.")
+	finally:
+		to_quit = True
+		camera.stop()
 
 def sem2_routine(actions: List[Action], elements: List[Element]):
 	global to_quit
