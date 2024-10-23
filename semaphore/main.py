@@ -184,7 +184,7 @@ def main():
 			   Street(1, pin_green=11, pin_yellow=8, pin_red=3, frame_xyxy=[600,471,840,717], min_green_time=7)]
 
 	# List of cross
-	cross = [Cross(5, pin_green=19, pin_red=15, pin_btn1=-1, pin_btn2=-1)]
+	cross = [Cross(5, pin_green=19, pin_red=15, pin_btn1=13, pin_btn2=21)]
 
 	# Semaphore interface
 	sem = SemaphoreInterface(streets, cross)

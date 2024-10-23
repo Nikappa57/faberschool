@@ -19,8 +19,8 @@ class SemaphoreInterface:
 		for c in self.cross:
 			GPIO.setup(c.pin_green, GPIO.OUT)
 			GPIO.setup(c.pin_red, GPIO.OUT)
-			# GPIO.setup(c.btn_1, GPIO.IN)
-			# GPIO.setup(c.btn_2, GPIO.IN)
+			GPIO.setup(c.btn_1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+			GPIO.setup(c.btn_2, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 		
 		for e in self.streets + self.cross:
 			self.update(e, SemState.RED)
